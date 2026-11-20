@@ -1,15 +1,16 @@
+import { collection, db, getDocs, addDoc, deleteDoc, doc, updateDoc } from "./config.js";
+
 let todos = [];
 let todoLists = document.querySelector(".todo-lists");
 
-
-let setTodoInLocalStorage = () => {
-    window.localStorage.setItem('todos', JSON.stringify(todos));
-}
-let getTodoInLocalStorage = () => {
-    let todoData = JSON.parse(window.localStorage.getItem("todos"));
-    todos = todoData || [];
-}
-getTodoInLocalStorage();
+// let setTodoInLocalStorage = () => {
+//     window.localStorage.setItem('todos', JSON.stringify(todos));
+// }
+// let getTodoInLocalStorage = () => {
+//     let todoData = JSON.parse(window.localStorage.getItem("todos"));
+//     todos = todoData || [];
+// }
+// getTodoInLocalStorage();
 
 
 let doneTodo = (todo_id) => {
@@ -38,28 +39,28 @@ let deleteAll = () => {
     renderTodo();
 }
 
-let addTodo = () => {
-    let todoInp = document.getElementById("todo-inp");
+let addTodo = async () => {
+    try {
+        let todoInp = document.getElementById("todo-inp");
 
-    if (todoInp.value.length != 0) {
-        todos.push({
-            text: todoInp.value,
-            id: new Date().getTime(),
-            iscompleted: false
+        // validation
+        if (todoInp.value < 3) {
+            alert("Character at least 3!");
+            return;
+        }
+        const docRef = await addDoc(collection(db, "users"), {
+            username: todoInp.value
         });
-        console.log(todos);
-        setTodoInLocalStorage();
-        todoInp.value = '';
-        renderTodo();
-    }
-    else {
-        let alert = document.querySelector("#alert");
-        alert.innerText = "Character Invalid!";
-        todoInp.addEventListener("input", function () {
-            alert.innerText = "";
-        })    
+
+        todoInp.value = "";
+        console.log("Document written with ID: ", docRef.id)
+
+    } catch (error) {
+        console.error(error);
     }
 }
+document.querySelector("#addBtn").addEventListener("click", addTodo);
+
 
 let deleteTodo = (todo_id) => {
     console.log(todo_id);
@@ -102,7 +103,7 @@ let updateTodo = (todo_id) => {
 
 }
 
-let editTodo = (todo_id) => {
+window.editTodo = (userObj_id) => {
     console.log(todo_id);
 
     let deleteBtns = document.querySelectorAll('.del-btn');
@@ -111,8 +112,10 @@ let editTodo = (todo_id) => {
     deleteBtns.forEach((btn) => btn.disabled = true);
     editBtns.forEach((btn) => btn.disabled = true);
 
-    let findTodo = todos.find((todo) => todo.id === todo_id);
-    document.querySelector('#todo-inp').value = findTodo.text;
+    let findTodo = todos.find((todo) => todo.id === userObj_id);
+    console.log("find todo: ", findTodo);
+    
+    document.querySelector('#todo-inp').value = findTodo.username;
 
     let addBtn = document.querySelector('#addBtn');
     addBtn.innerText = 'Update';
@@ -123,31 +126,54 @@ let editTodo = (todo_id) => {
 
 }
 
-let renderTodo = () => {
+// user fecth
+
+let fetchUsers = async () => {
+    try {
+        todos = [];
+        const querySnapshot = await getDocs(collection(db, "users"));
+
+        querySnapshot.forEach(doc => {
+            todos.push({
+                ...doc.data(), id: doc.id
+            });
+        });
+        console.log(todos);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+fetchUsers().then(() => {
+    renderUsers();
+})
+
+
+let renderUsers = () => {
     console.log(todos);
 
     todoLists.innerHTML = ``;
-    todos.map((item) => {
+    todos.map((userObj) => {
         let todoList = document.createElement('div');
         todoList.className = 'todo';
 
-        if (item.iscompleted) {
+        if (userObj.iscompleted) {
             todoList.className += ' done';
             todoList.innerHTML = `
                 <div class='todo-list-sub'>
-                    <span class='todo-list-text'>${item.text}</span>
-                    <button class='del-btn' onclick='deleteTodo(${item.id})'><i class="fa-solid fa-trash"></i></button>
+                    <span class='todo-list-text'>${userObj.username}</span>
+                    <button class='del-btn' onclick='deleteTodo(${userObj.id})'><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
         }
         else {
             todoList.innerHTML = `
-                <div class='todo-list-sub' id='${item.id}'>
-                    <span class='todo-list-text'>${item.text}</span>
+                <div class='todo-list-sub' id='${userObj.id}'>
+                    <span class='todo-list-text'>${userObj.username}</span>
                     <div class='buttons-box'>
-                        <button class='del-btn' onClick='deleteTodo(${item.id})'><i class="fa-solid fa-trash"></i></button>
-                        <button class='edit-btn' id='edit-btn-icon' onClick='editTodo(${item.id})'><i class="fa-solid fa-pen"></i></button>
-                        <button class='done-btn' onClick='doneTodo(${item.id})'><i class="fa-solid fa-circle-check"></i></button>
+                        <button class='del-btn' onClick='deleteTodo(${userObj.id})'><i class="fa-solid fa-trash"></i></button>
+                        <button class='edit-btn' id='edit-btn-icon' onClick='editTodo(${userObj.id})'><i class="fa-solid fa-pen"></i></button>
+                        <button class='done-btn' onClick='doneTodo(${userObj.id})'><i class="fa-solid fa-circle-check"></i></button>
                     </div>        
                 </div>
             `;
@@ -158,4 +184,30 @@ let renderTodo = () => {
     });
 }
 
-renderTodo();
+renderUsers();
+
+
+
+let updateUser = async (uid) => {
+    try {
+        const docRef = doc(db, "users", uid);
+
+        await updateDoc(docRef, {
+            username: todoInp.value
+        });
+
+        todos.forEach((userObj) => {
+            if (userObj.id === uid) {
+                userObj.username = "user 0";
+            }
+        })
+
+        renderUsers();
+
+        console.log("user updated successfully!");
+        
+
+    } catch (error) {
+        console.error(error);
+    }
+}
