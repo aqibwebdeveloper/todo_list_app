@@ -3,25 +3,34 @@ import { collection, db, getDocs, addDoc, deleteDoc, doc, updateDoc } from "./co
 let todos = [];
 let todoLists = document.querySelector(".todo-lists");
 
-// let setTodoInLocalStorage = () => {
-//     window.localStorage.setItem('todos', JSON.stringify(todos));
-// }
-// let getTodoInLocalStorage = () => {
-//     let todoData = JSON.parse(window.localStorage.getItem("todos"));
-//     todos = todoData || [];
-// }
-// getTodoInLocalStorage();
+window.doneTodo = async (todo_id) => {
 
+    try {
+        if (todo_id !== null) {
+            await updateDoc(doc(db, "users", todo_id), {
+                iscompleted: true
+            });
 
-let doneTodo = (todo_id) => {
+            todos.forEach((userObj) => {
+                if (userObj.id === todo_id) {
+                    userObj.iscompleted = true;
+                }
+            });
 
-    todos.forEach((todo) => {
+            todo_id = null;
+
+            document.querySelector("#addBtn").innerText = "Add";
+        }
+
+        todos.forEach((todo) => {
         if (todo.id == todo_id) {
             todo.iscompleted = true;
         }
     });
+    } catch (error) {
+        console.error(error);   
+    }
 
-    setTodoInLocalStorage();
 
     let todoElement = document.getElementById(`${todo_id}`);
 
@@ -32,9 +41,6 @@ let doneTodo = (todo_id) => {
     todoElement.querySelector(".done-btn").style.display = "none";
 
 };
-
-
-// document.querySelector(".edit-btn").addEventListener("click", editTodo);
 
 // user fecth
 
@@ -58,6 +64,7 @@ fetchUsers().then(() => {
     renderUsers();
 })
 
+// Render All Users function
 
 let renderUsers = () => {
     console.log(todos);
@@ -94,6 +101,8 @@ let renderUsers = () => {
     });
 }
 
+// Delete All users function
+
 window.deleteAll = async () => {
     try {
         for (let todo of todos) {
@@ -108,30 +117,63 @@ window.deleteAll = async () => {
     }
 };
 
+let editId = null;
+
+// Add and Update user function
+
 let addTodo = async () => {
     try {
         let todoInp = document.getElementById("todo-inp");
 
-        // validation
-        if (todoInp.value < 3) {
+        if (todoInp.value.trim().length < 3) {
             alert("Character at least 3!");
             return;
         }
-        const docRef = await addDoc(collection(db, "users"), {
-            username: todoInp.value,
-            iscompleted: false
-        });
+
+        // Agar edit mode hai to update karein
+        if (editId !== null) {
+            await updateDoc(doc(db, "users", editId), {
+                username: todoInp.value
+            });
+
+            todos.forEach((userObj) => {
+                if (userObj.id === editId) {
+                    userObj.username = todoInp.value;
+                }
+            });
+
+            editId = null;
+
+            document.querySelector("#addBtn").innerText = "Add";
+
+        } 
+        // Warna new user add karein
+        else {
+            const docRef = await addDoc(collection(db, "users"), {
+                username: todoInp.value,
+                iscompleted: false
+            });
+
+            todos.push({
+                username: todoInp.value,
+                iscompleted: false,
+                id: docRef.id
+            });
+        }
 
         todoInp.value = "";
-        console.log("Document written with ID: ", docRef.id)
-
         renderUsers();
+
+        document.querySelector("#delAllBtn").disabled = false;
 
     } catch (error) {
         console.error(error);
     }
-}
+};
+
 document.querySelector("#addBtn").addEventListener("click", addTodo);
+
+// Delete user function
 
 window.deleteTodo = async (todo_id) => {
     try {
@@ -146,14 +188,19 @@ window.deleteTodo = async (todo_id) => {
     }
 };
 
+
+// edit user function
+
 window.editTodo = (userObj_id) => {
     console.log(userObj_id);
 
     let deleteBtns = document.querySelectorAll('.del-btn');
     let editBtns = document.querySelectorAll('.edit-btn');
+    let doneBtn = document.querySelectorAll(".done-btn");
     document.querySelector('#delAllBtn').disabled = true;
     deleteBtns.forEach((btn) => btn.disabled = true);
     editBtns.forEach((btn) => btn.disabled = true);
+    doneBtn.forEach(btn => btn.disabled = true);
 
     let findTodo = todos.find((todo) => todo.id === userObj_id);
     console.log("find todo: ", findTodo);
@@ -167,48 +214,6 @@ window.editTodo = (userObj_id) => {
     addBtn.setAttribute('onClick', `updateUser('${userObj_id}')`);
     addBtn.style.width = "13%";
 
-}
+    editId = userObj_id;
 
-
-
-window.updateUser = async (uid) => {
-    try {
-
-        console.log(uid);
-
-        let todoInp = document.querySelector("todo-inp")
-        const docRef = doc(db, "users", uid);
-
-        await updateDoc(docRef, {
-            username: todoInp.value
-        });
-
-        todos.forEach((userObj) => {
-            if (userObj.id == uid) {
-                userObj.username = `${todoInp.value}`;
-            }
-        })
-
-        let deleteBtns = document.querySelectorAll('.del-btn');
-        let editBtns = document.querySelectorAll('.edit-btn');
-        document.querySelector('#delAllBtn').disabled = false;
-        deleteBtns.forEach((btn) => btn.disabled = false);
-        editBtns.forEach((btn) => btn.disabled = false);
-
-        let addBtn = document.querySelector('#addBtn');
-        addBtn.innerText = 'Add';
-        document.querySelector('#todo-inp').value = '';
-
-        addBtn.removeAttribute('onClick');
-        addBtn.setAttribute('onClick', `addTodo()`);
-        addBtn.style.width = "10%";
-
-        renderUsers();
-
-        console.log("user updated successfully!");
-
-
-    } catch (error) {
-        console.error(error);
-    }
 }
