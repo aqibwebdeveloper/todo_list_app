@@ -8,7 +8,7 @@ Edit Todo: Update existing tasks whenever needed.
 Delete Todo: Remove individual tasks from the list.
 Delete All: Clear all todos with a single click.
 Mark as Completed: Mark tasks as completed.
-Local Storage: Automatically save todos in the browser's local storage, so tasks remain available after refreshing the page.
+Firebase Firestore: Store and manage todos in Firebase Cloud Firestore, so tasks remain available even after refreshing the page or reopening the browser.
 Dynamic UI: Todos are dynamically displayed using JavaScript.
 Dark Theme: Clean and modern dark-themed user interface.
 Font Awesome Icons: Uses icons for edit, delete, and completed actions.
@@ -16,7 +16,7 @@ Font Awesome Icons: Uses icons for edit, delete, and completed actions.
 HTML5 – For creating the application structure.
 CSS3 – For styling and designing the user interface.
 JavaScript (Vanilla JS) – For handling todo functionality and DOM manipulation.
-Local Storage – For storing todo data in the browser.
+Firebase Firestore – For storing, retrieving, updating, and deleting todo data in the cloud.
 Font Awesome – For displaying action icons.
 📂 Project Structure
 text
@@ -28,7 +28,8 @@ Todo-App/
 │   └── style.css
 │
 └── js/
-    └── app.js
+    ├── app.js
+    └── config.js
 
 ⚙️ Installation & Setup
 
@@ -46,9 +47,15 @@ bash
 cd todo_list_app
 
 
-3. Open the project
+3. Firebase Setup
 
-Open the index.html file in your web browser.
+Create a Firebase project in the Firebase Console.
+Enable Cloud Firestore in your Firebase project.
+Configure your Firebase project credentials in config.js.
+
+4. Open the project
+
+Open the index.html file using a local development server.
 
 You can also use the Live Server extension in Visual Studio Code.
 
@@ -61,12 +68,14 @@ Click the Check icon to mark a task as completed.
 Click Delete All to remove all tasks.
 💾 Data Storage
 
-This application uses the browser's Local Storage to save todo items.
+This application uses Firebase Cloud Firestore to store and manage todo items.
 
-Todos are saved automatically when added or updated.
-Completed tasks are also saved.
-Deleted tasks are removed from Local Storage.
-Todos remain saved even after refreshing or reopening the browser, as long as browser storage is not cleared.
+Todos are stored in a Firestore collection.
+New todos are saved directly to Firestore.
+Existing todos can be updated using Firestore update operations.
+Completed tasks are managed and their completion status is stored in Firestore.
+Deleted todos are removed from Firestore.
+Todos remain available across page refreshes and browser sessions because data is stored in the cloud.
 🎨 User Interface
 
 The application features a dark-themed design with a simple and user-friendly layout.
